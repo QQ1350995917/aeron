@@ -1,41 +1,41 @@
 package aeron.test;
 
-import static io.aeron.samples.SampleConfiguration.EMBEDDED_MEDIA_DRIVER;
-
 import io.aeron.Aeron;
-import io.aeron.Publication;
 import io.aeron.driver.MediaDriver;
-import org.agrona.CloseHelper;
 
 /**
  * aeron.test@aeron
  *
  * TODO what you want to do?
  *
- * date 2019-05-10 18:10
+ * date 2019-05-10 19:02
  *
  * @author DingPengwei[dingpengwei@eversec.cn]
  * @version 1.0.0
  * @since DistributionVersion
  */
 public class Main {
+  static final MediaDriver driver = MediaDriver.launchEmbedded();
+  static final Aeron.Context context = new Aeron.Context();
+  static final Aeron aeron = Aeron.connect(context.aeronDirectoryName(driver.aeronDirectoryName()));
 
   public static void main(String[] args) {
-    final MediaDriver driver = EMBEDDED_MEDIA_DRIVER ? MediaDriver.launchEmbedded() : null;
-    final Aeron.Context ctx = new Aeron.Context();
-    if (EMBEDDED_MEDIA_DRIVER) {
-      ctx.aeronDirectoryName(driver.aeronDirectoryName());
-    }
+    MainSubscriber mainSubscriber = new MainSubscriber(aeron);
+    MainPublisher mainPublisher = new MainPublisher(aeron);
 
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+    mainSubscriber.start();
+
+      }
+    }).start();
 
     try {
-      new BasicPublisher().start(driver);
-    } catch (Exception e) {
+      Thread.sleep(100);
+    } catch (InterruptedException e) {
       e.printStackTrace();
     }
-    new BasicSubscriber().start(driver);
-    CloseHelper.quietClose(driver);
-
-
+    mainPublisher.send();
   }
 }
